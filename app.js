@@ -17,39 +17,18 @@ app.get('/', (_, response) => {
 	response.sendFile('index.html', { root })
 })
 
-
-
-// GET /api/todos
-app.get('/api/todos', (req, res) => {
-	res.json(todos);
-});
-// POST /api/todos
-app.post('/api/todos', (req, res) => {
-	const { task } = req.body;
-	const id = todos.length + 1; // Generate a new ID
-	const newTask = { id, task, complete: false };
-
-	todos.push(newTask);
-
-	res.json({ id });
-});
-// PUT /api/todos/:id
-app.put('/api/todos/:id', (req, res) => {
-	const id = parseInt(req.params.id, 10); // Convert ID to integer
-	const taskIndex = todos.findIndex(task => task.id === id);
-
-	if (taskIndex !== -1) {
-		todos[taskIndex].complete = !todos[taskIndex].complete;
-		res.json(todos[taskIndex]);
-	} else {
-		res.status(404).json({ message: 'Task not found' });
-	}
-});
-// Start the server
-app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
+javascript const { MongoClient } = require('mongodb');
+const fs = require('fs');
+let dbConnection;
+fs.readFile('./secrets/mongodb.json', (err, data) => {
+	if (err) throw err;
+	const config = JSON.parse(data);
+	const client = new MongoClient(config.uri, { useNewUrlParser: true, useUnifiedTopology: true });
+	client.connect(err => {
+		if (err) throw err;
+		dbConnection = client.db();
+		console.log("Connected successfully to MongoDB");
+	});
 });
 
-
-const message = `Server running: http://localhost:${port}`
-app.listen(port, () => console.log(message))
+app.use('/api/todos', require('./api-routes'))
